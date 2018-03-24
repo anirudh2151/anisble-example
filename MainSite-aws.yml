@@ -1,0 +1,158 @@
+---
+- hosts: all
+  vars:
+    httpd_port: 80
+    mysqlservice: mysqld
+    mysql_port: 3306
+    dbuser: user
+    dbname: adminname
+    upassword: password
+  remote_user: ec2-user
+  become: yes
+  become_user: root
+  tasks:
+  - name: Install chrony
+    yum: name=chrony state=present
+
+  - name: Install common dependencies
+    yum: name={{ item }} state=installed
+    with_items:
+      - libselinux-python
+      - libsemanage-python
+#      - firewalld
+
+  - name: Start the chrony service
+    service: name=chronyd state=started enabled=yes
+
+  - name: Install httpd and php
+    yum: name={{ item }} state=present
+    with_items:
+      - httpd
+#      - httpd-devel
+      - php
+      - php-mysql
+#      - libapache2-mod-php
+#      - php-cli
+#      - php-cgi
+#      - php-gd
+#      - php-mcrypt
+#      - build-essential 
+#      - python-devel
+#      - libmysqlclient-devel
+#      - apache2
+#      - build-essential
+#      - python-devel
+#      - libmysqlclient-devel
+#      - python-mysqldb
+#      - mysql-server
+#      - mysql-client
+#      - php
+#      - php-mysql
+#      - libapache2-mod-php
+#      - php-cli
+#      - php-cgi
+#      - php-gd
+#      - php-mcrypt
+
+  - name: Creates the index.php file
+    template: src=/opt/ssh_temp/index.php.j2 dest=/var/www/html/index.php
+
+  - name: Install web role specific dependencies
+    yum: name={{ item }} state=installed
+    with_items:
+        - git
+        
+  - name: create empty iptables file
+    file: path=/etc/sysconfig/iptables state=touch owner=root mode=0644
+    
+  - name: create empty ip6tables file
+    file: path=/etc/sysconfig/ip6tables state=touch owner=root mode=0644
+  
+  - name: Start iptables
+    service: name=iptables state=started enabled=yes
+    
+  - name: Start ip6tables
+    service: name=ip6tables state=started enabled=yes
+
+  - name: Adding rules to IPtables
+    command: /sbin/iptables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "httpd_port"
+ 
+  - name: Adding rules to IPtables
+    command: /sbin/ip6tables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "httpd_port"
+
+#  - name: Start firewalld
+#    service: name=firewalld state=started enabled=yes
+
+# - name: insert/adding firewalld rule for httpd
+#   firewalld: port={{ httpd_port }}/tcp permanent=true state=enabled immediate=yes
+
+  - name: start the httpd Service
+    service: name=httpd state=started enabled=yes
+
+#  - name: Configure SELinux to allow httpd to connect to remote database
+#    seboolean: name=httpd_can_network_connect state=true persistent=yes
+
+  - name: Install mysqlDB package
+    yum: name={{ item }} state=installed
+    with_items:
+     - mysql-server
+#     - mysql-client
+  
+  - name: Installing pip
+    yum: name={{ item }} state=installed
+    with_items:
+     - python-pip
+#     - python-wheel
+#     - mysql-connector-python
+     - python-devel
+
+  - name: Installing mysql-python using pip
+    yum: name={{ item }} state=present
+    with_items:
+     - MySQL-python
+#     - MySQL-python
+     - mysql-devel
+
+#  - name: "Installing pip dependencies"
+#    pip: 
+#      name: MySQL-python
+#      extra_args: --index=https://pypi.python.org/pypi/
+#      version: 1.2.5
+
+#  - name: Configure SELinux to start mysql on any port
+#    seboolean: name=mysql_connect_any state=true persistent=yes
+
+  - name: Create mysqldb PID directory
+    file: path=/var/run/mysql state=directory owner=root group=mysql mode=0775
+
+
+  - name: Start mysql db Service
+    service: name=mysqld state=started enabled=yes
+
+ # - name: Start firewalld
+ #   service: name=firewalld state=started enabled=yes
+
+ # - name: insert firewalld rule
+ #   firewalld: port={{ mysql_port }}/tcp permanent=true state=enabled immediate=yes
+
+  - name: Adding rules to IPtables
+    command: /sbin/iptables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
+ 
+  - name: Adding rules to IPtables
+    command: /sbin/ip6tables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
+
+  - name: Create Mysql configuration file
+    template: src=/opt/ssh_temp/my.cnf.j2 dest=/etc/my.cnf
+    
+  - name: Create Application Database
+    mysql_db: name={{ dbname }} state=present collation=utf8_general_ci
+
+  - name: Create Application DB User
+    mysql_user: name={{ dbuser }} password={{ upassword }} priv=*.*:ALL host='%' state=present
+
+#  - name: Installing NTP servers
+#    yum: name=ntp state=present
+
+  - name: Starting the mysql servers
+    service: name=mysqld state=started
+
