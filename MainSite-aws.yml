@@ -4,8 +4,8 @@
     httpd_port: 80
     mysqlservice: mysqld
     mysql_port: 3306
-    dbuser: user
-    dbname: adminname
+    dbuser: databaseuser
+    dbname: databasename
     upassword: password
 #  remote_user: ec2-user
   become: yes
