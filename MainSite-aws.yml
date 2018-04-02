@@ -91,15 +91,15 @@
 
 #  - name: Configure SELinux to allow httpd to connect to remote database
 #    seboolean: name=httpd_can_network_connect state=true persistent=yes
-
-  - name: adding mysql repo
-    get_url: url=http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm dest=/opt/
-
-  - name: running "sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm"
-    shell: sudo rpm -ivh /opt/mysql-community-release-el7-5.noarch.rpm
+#
+#  - name: adding mysql repo
+#    get_url: url=http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm dest=/opt/
+#
+#  - name: running "sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm"
+#    command: "rpm -ivh /opt/mysql-community-release-el7-5.noarch.rpm"
 
   - name: Install mysqlDB package
-    yum: name={{ item }} state=installed
+    yum: name={{ item }} state=present
     with_items:
      - mysql-server
 #     - mysql-client
@@ -148,11 +148,11 @@
 #    command: /sbin/ip6tables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
 
 
-  - name: insert/adding firewalld rule for httpd
+  - name: insert/adding firewalld rule for mysql
     firewalld: port={{ mysql_port }}/tcp permanent=true state=enabled immediate=yes
  
   - name: Create Mysql configuration file
-    template: src=/opt/ssh_temp/my.cnf.j2 dest=/etc/my.cnf
+    template: src=/opt/git_example/ansible-example/my.cnf.j2 dest=/etc/my.cnf
     
   - name: Create Application Database
     mysql_db: name={{ dbname }} state=present collation=utf8_general_ci
