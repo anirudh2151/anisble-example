@@ -1,12 +1,12 @@
 ---
 - hosts: all
-  vars:
-    httpd_port: 80
-    mysqlservice: mysqld
-    mysql_port: 3306
-    dbuser: user
-    dbname: adminname
-    upassword: password
+#  vars:
+#    httpd_port: 80
+#    mysqlservice: mysqld
+#    mysql_port: 3306
+#    dbuser: user
+#    dbname: adminname
+#    upassword: password
 #  remote_user: ec2-user
   become: yes
   become_user: root
@@ -92,6 +92,12 @@
 #  - name: Configure SELinux to allow httpd to connect to remote database
 #    seboolean: name=httpd_can_network_connect state=true persistent=yes
 
+  - name: adding mysql repo
+    get_url: url=http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm dest=/opt/
+
+  - name: running "sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm"
+    shell: sudo rpm -ivh /opt/mysql-community-release-el7-5.noarch.rpm
+
   - name: Install mysqlDB package
     yum: name={{ item }} state=installed
     with_items:
@@ -135,12 +141,16 @@
   - name: insert firewalld rule
     firewalld: port={{ mysql_port }}/tcp permanent=true state=enabled immediate=yes
 
-  - name: Adding rules to IPtables
-    command: /sbin/iptables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
- 
-  - name: Adding rules to IPtables
-    command: /sbin/ip6tables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
+#  - name: Adding rules to IPtables
+#    command: /sbin/iptables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
+# 
+#  - name: Adding rules to IPtables
+#    command: /sbin/ip6tables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
 
+
+  - name: insert/adding firewalld rule for httpd
+    firewalld: port={{ mysql_port }}/tcp permanent=true state=enabled immediate=yes
+ 
   - name: Create Mysql configuration file
     template: src=/opt/ssh_temp/my.cnf.j2 dest=/etc/my.cnf
     
