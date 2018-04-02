@@ -55,7 +55,7 @@
 #      - php-mcrypt
 
   - name: Creates the index.php file
-    template: src=/opt/ansible-example/ansible-example/index.php.j2 dest=/var/www/html/index.php
+    template: src=/opt/git_example/ansible-example/index.php.j2 dest=/var/www/html/index.php
 
   - name: Install web role specific dependencies
     yum: name={{ item }} state=installed
@@ -129,11 +129,11 @@
   - name: Start mysql db Service
     service: name=mysqld state=started enabled=yes
 
- # - name: Start firewalld
- #   service: name=firewalld state=started enabled=yes
+  - name: Start firewalld
+    service: name=firewalld state=started enabled=yes
 
- # - name: insert firewalld rule
- #   firewalld: port={{ mysql_port }}/tcp permanent=true state=enabled immediate=yes
+  - name: insert firewalld rule
+    firewalld: port={{ mysql_port }}/tcp permanent=true state=enabled immediate=yes
 
   - name: Adding rules to IPtables
     command: /sbin/iptables -I INPUT 1 -p tcp --dport http -j ACCEPT -m comment --comment "mysql_port"
